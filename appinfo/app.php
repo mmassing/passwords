@@ -22,3 +22,11 @@ $navigationEntry = function () use ($container) {
 	];
 };
 $container->getServer()->getNavigationManager()->add($navigationEntry);
+
+\OC::$server->getActivityManager()->registerExtension(function() {
+		return new \OCA\Passwords\Activity(
+			\OC::$server->query('L10NFactory'),
+			\OC::$server->getURLGenerator(),
+			\OC::$server->getActivityManager()
+		);
+});

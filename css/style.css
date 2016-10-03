@@ -998,6 +998,9 @@ p#generate_strength_popup,
 #stop,
 #mail {
 	float: left;
+	padding-left: 21px;
+	background-position-x: 3px;
+	background-size: 16px;
 }
 #popupButtons {
 	width: 100%;

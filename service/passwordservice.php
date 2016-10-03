@@ -6,6 +6,9 @@ use Exception;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 
+use OCP\Activity\IExtension;
+use OCP\Activity\IManager;
+
 use OCA\Passwords\Db\Password;
 use OCA\Passwords\Db\PasswordMapper;
 
@@ -158,6 +161,9 @@ class PasswordService {
 		$password->setAddress('');
 		$password->setNotes('');
 		$password->setCreationDate('1970-01-01');
+		
+		//add to Activity stream
+		Activity::addPassword($userId, $website, $loginname);
 
 		$password->setUserId($userId);
 		$password->setWebsite($website);
@@ -255,6 +261,11 @@ class PasswordService {
 
 	public function update($id, $website, $pass, $loginname, $address, $notes, $sharewith, $category, $deleted, $datechanged, $userId) {
 
+		$isShared = $this->mapper->isShared($id);
+		$isTrashed = $this->mapper->isTrashed($id);
+		$sharedWithUsers = $this->mapper->sharedWithUsers($id);
+		$alreadySharedWithThisUser = 0;
+
 		// remove old sharekeys and shares of this password
 		$removesharekey = $this->mapper->deleteSharesbyID($id);
 		if (count($sharewith) > 0 AND $sharewith != '') {
@@ -266,7 +277,39 @@ class PasswordService {
 			}
 			// add new sharekeys to db
 			for ($x = 0; $x < count($sharewith); $x++) {
+				//add to Activity stream when clicked on Share
+				$alreadySharedWithThisUser = $this->mapper->isSharedWithUser($id, $sharewith[$x]);
+				if ($alreadySharedWithThisUser == 0) {
+					Activity::addShare($userId, $website, $loginname, $sharewith[$x]);
+				}
+				// now add the share key for the user
 				$addsharekey = $this->mapper->insertShare($id, $sharewith[$x], $sharekey);
+			}
+		} else {
+			// not shared now
+			if ($isShared == 1) {
+				Activity::deleteShare($userId, $website, $loginname);
+				// notify users to whom this was shared to too
+				$arr_enc = json_encode($sharedWithUsers);
+				$arr = json_decode($arr_enc, true);
+
+				foreach ($arr as $row => $value) {
+					// uses website column or else findEntities won't work
+					$userSharedTo = $arr[$row]['website'];
+					Activity::deleteShareForUser($userId, $userSharedTo, $website, $loginname);
+				}
+			} else {
+				if ($isTrashed == 0 && $deleted == 1) {
+					// not in trash, but will be now
+					Activity::deletePassword($userId, $website, $loginname);
+				} else if ($isTrashed == 1 && $deleted == 0) {
+					// was in trash, but won't be now
+					Activity::undeletePassword($userId, $website, $loginname);
+				} else {
+					// then it's just an edit
+					Activity::editPassword($userId, $website, $loginname);
+				}
+				
 			}
 		}
 
@@ -327,11 +370,114 @@ class PasswordService {
 	public function delete($id, $userId) {
 		try {
 			$password = $this->mapper->find($id, $userId);
+			$arr_enc = json_encode($password);
+			$arr = json_decode($arr_enc, true);
 			$this->mapper->delete($password);
+			// add to activity stream
+			Activity::deletePermanentPassword($userId, $arr['website']);
 			return $password;
 		} catch(Exception $e) {
 			$this->handleException($e);
 		}
+	}
+}
+
+class Activity {
+	
+	public static function addPassword($userId, $website, $loginname) {
+		$time = time();
+		$new_activity = \OC::$server->getActivityManager()->generateEvent();
+		$new_activity->setApp(\OCA\Passwords\Activity::PASSWORDS_APP);
+		$new_activity->setType(\OCA\Passwords\Activity::TYPE_ADDED);
+		$new_activity->setAffectedUser($userId);
+		$new_activity->setSubject(\OCA\Passwords\Activity::SUBJECT_ADDED_USER_SELF, [$website, $loginname]);
+		$new_activity->setTimestamp($time);
+		\OC::$server->getActivityManager()->publish($new_activity);
+	}
+	
+	public static function editPassword($userId, $website, $loginname) {
+		$time = time();
+		$new_activity = \OC::$server->getActivityManager()->generateEvent();
+		$new_activity->setApp(\OCA\Passwords\Activity::PASSWORDS_APP);
+		$new_activity->setType(\OCA\Passwords\Activity::TYPE_EDITED);
+		$new_activity->setAffectedUser($userId);
+		$new_activity->setSubject(\OCA\Passwords\Activity::SUBJECT_EDITED_USER_SELF, [$website, $loginname]);
+		$new_activity->setTimestamp($time);
+		\OC::$server->getActivityManager()->publish($new_activity);
+	}
+	
+	public static function deletePassword($userId, $website, $loginname) {
+		$time = time();
+		$new_activity = \OC::$server->getActivityManager()->generateEvent();
+		$new_activity->setApp(\OCA\Passwords\Activity::PASSWORDS_APP);
+		$new_activity->setType(\OCA\Passwords\Activity::TYPE_DELETED);
+		$new_activity->setAffectedUser($userId);
+		$new_activity->setSubject(\OCA\Passwords\Activity::SUBJECT_DELETED_USER_SELF, [$website, $loginname]);
+		$new_activity->setTimestamp($time);
+		\OC::$server->getActivityManager()->publish($new_activity);
+	}
+
+	public static function deletePermanentPassword($userId, $website) {
+		$time = time();
+		$new_activity = \OC::$server->getActivityManager()->generateEvent();
+		$new_activity->setApp(\OCA\Passwords\Activity::PASSWORDS_APP);
+		$new_activity->setType(\OCA\Passwords\Activity::TYPE_DELETED_PERMANENT);
+		$new_activity->setAffectedUser($userId);
+		$new_activity->setSubject(\OCA\Passwords\Activity::SUBJECT_DELETED_PERMANENT_USER_SELF, [$website]);
+		$new_activity->setTimestamp($time);
+		\OC::$server->getActivityManager()->publish($new_activity);
+	}
+
+	public static function undeletePassword($userId, $website, $loginname) {
+		$time = time();
+		$new_activity = \OC::$server->getActivityManager()->generateEvent();
+		$new_activity->setApp(\OCA\Passwords\Activity::PASSWORDS_APP);
+		$new_activity->setType(\OCA\Passwords\Activity::TYPE_UNDELETED);
+		$new_activity->setAffectedUser($userId);
+		$new_activity->setSubject(\OCA\Passwords\Activity::SUBJECT_UNDELETED_USER_SELF, [$website, $loginname]);
+		$new_activity->setTimestamp($time);
+		\OC::$server->getActivityManager()->publish($new_activity);
+	}
+	
+	public static function addShare($userId, $website, $loginname, $sharewith) {
+		$time = time();
+		$activity_owner = \OC::$server->getActivityManager()->generateEvent();
+		$activity_owner->setApp(\OCA\Passwords\Activity::PASSWORDS_APP);
+		$activity_owner->setType(\OCA\Passwords\Activity::TYPE_SHARED_BY_ME);
+		$activity_owner->setAffectedUser($userId);
+		$activity_owner->setSubject(\OCA\Passwords\Activity::SUBJECT_SHARED_WITH, [$website, $loginname, $sharewith]);
+		$activity_owner->setTimestamp($time);
+		\OC::$server->getActivityManager()->publish($activity_owner);
+
+		$activity_receiver = \OC::$server->getActivityManager()->generateEvent();
+		$activity_receiver->setApp(\OCA\Passwords\Activity::PASSWORDS_APP);
+		$activity_receiver->setType(\OCA\Passwords\Activity::TYPE_SHARED_TO_ME);
+		$activity_receiver->setAffectedUser($sharewith);
+		$activity_receiver->setSubject(\OCA\Passwords\Activity::SUBJECT_SHARED_WITH_ME, [$userId, $website, $loginname]);
+		$activity_receiver->setTimestamp($time);
+		\OC::$server->getActivityManager()->publish($activity_receiver);
+	}
+	
+	public static function deleteShare($userId, $website, $loginname) {
+		$time = time();
+		$activity_owner = \OC::$server->getActivityManager()->generateEvent();
+		$activity_owner->setApp(\OCA\Passwords\Activity::PASSWORDS_APP);
+		$activity_owner->setType(\OCA\Passwords\Activity::TYPE_SHARE_STOP);
+		$activity_owner->setAffectedUser($userId);
+		$activity_owner->setSubject(\OCA\Passwords\Activity::SUBJECT_UNSHARED, [$website, $loginname]);
+		$activity_owner->setTimestamp($time);
+		\OC::$server->getActivityManager()->publish($activity_owner);
+	}
+
+	public static function deleteShareForUser($userId, $userSharedTo, $website, $loginname) {
+		$time = time();
+		$activity_receiver = \OC::$server->getActivityManager()->generateEvent();
+		$activity_receiver->setApp(\OCA\Passwords\Activity::PASSWORDS_APP);
+		$activity_receiver->setType(\OCA\Passwords\Activity::TYPE_SHARE_STOP_BY_ME);
+		$activity_receiver->setAffectedUser($userSharedTo);
+		$activity_receiver->setSubject(\OCA\Passwords\Activity::SUBJECT_UNSHARED_BY_ME, [$userId, $website, $loginname]);
+		$activity_receiver->setTimestamp($time);
+		\OC::$server->getActivityManager()->publish($activity_receiver);
 	}
 }
 
@@ -455,11 +601,10 @@ class Calculations {
 	public static function uniord($c) {
 		// http://stackoverflow.com/a/10333324
 		// used to replace JS's 'charCodeAt' function
-		try {
-			$h = ord($c{0});
-		} catch (Exception $e) {
+		if ($c == '') {
 			return false;
-		}	
+		}
+		$h = ord($c{0});
 		if ($h <= 0x7F) {
 			return $h;
 		} else if ($h < 0xC2) {

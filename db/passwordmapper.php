@@ -102,6 +102,46 @@ class PasswordMapper extends Mapper {
 		}
 	}
 
+	public function isShared($pwid) {
+		// checks if passwords is already shared
+		$sql = "SELECT SUM(CASE WHEN pwid = ? AND sharedto <> '' THEN 1 ELSE 0 END) AS count FROM *PREFIX*passwords_share";
+		$sql = $this->db->prepare($sql);
+ 		$sql->bindParam(1, $pwid, \PDO::PARAM_INT);
+ 		$sql->execute();
+ 		$row = $sql->fetch();
+ 		$sql->closeCursor();
+ 		return min((int) $row['count'], 1); // so will be 0 or 1
+	}
+
+	public function sharedWithUsers($pwid) {
+		// returns array with users
+		$sql = "SELECT t1.pwid AS id, t1.sharedto AS website FROM *PREFIX*passwords_share AS t1 LEFT JOIN *PREFIX*passwords_share AS t2 ON t2.id = t1.pwid WHERE t1.pwid = ?";
+		return $this->findEntities($sql, [$pwid]);
+	}
+
+	public function isTrashed($pwid) {
+		// checks if passwords is already shared
+		$sql = 'SELECT * FROM *PREFIX*passwords WHERE id = ?';
+		$sql = $this->db->prepare($sql);
+		$sql->bindParam(1, $pwid, \PDO::PARAM_INT);
+		$sql->execute();
+		$row = $sql->fetch();
+		$sql->closeCursor();
+		return (int) $row['deleted'];
+	}
+
+	public function isSharedWithUser($pwid, $shareduserid) {
+		// checks if passwords is already shared with a specific user
+		$sql = 'SELECT SUM(CASE WHEN pwid = ? AND sharedto = ? THEN 1 ELSE 0 END) AS count FROM *PREFIX*passwords_share';
+		$sql = $this->db->prepare($sql);
+		$sql->bindParam(1, $pwid, \PDO::PARAM_INT);
+		$sql->bindParam(2, $shareduserid, \PDO::PARAM_STR);
+		$sql->execute();
+		$row = $sql->fetch();
+		$sql->closeCursor();
+		return min((int) $row['count'], 1); // so will be 0 or 1
+	}
+
 	public function insertShare($pwid, $shareto, $sharekey) {
 		$sql = 'INSERT INTO *PREFIX*passwords_share (pwid, sharedto, sharekey) VALUES (?, ?, ?)';
 		$sql = $this->db->prepare($sql);

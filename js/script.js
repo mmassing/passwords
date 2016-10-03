@@ -3266,11 +3266,11 @@ function popUp(title, value, type, address_value, website, username, sharedby) {
 			$('<button/>', {id:'accept', text:t('passwords', 'Share')}).appendTo($('#popupButtons'));
 			if (is_shared) {
 				// only show Stop Sharing button when the link has been shared already
-				$('<button/>', {id:'stop', text:t('passwords', 'Stop sharing')}).appendTo($('#popupButtons'));
+				$('<button/>', {id:'stop', class:'icon-close', text:t('passwords', 'Stop sharing')}).appendTo($('#popupButtons'));
 			}
 
 			// mail button
-			$('<button/>', {id:'mail', text:t('passwords', 'Send email')}).appendTo($('#popupButtons'));
+			$('<button/>', {id:'mail', class:'icon-mail', text:t('passwords', 'Send email')}).appendTo($('#popupButtons'));
 			// hide when not yet shared 
 			if (!is_shared) {
 				$('#mail').css('display', 'none');

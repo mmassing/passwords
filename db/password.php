@@ -17,6 +17,9 @@ class Password extends Entity implements JsonSerializable {
 	protected $userId;
 	protected $creationDate;
 	protected $deleted;
+	protected $pwid;
+	protected $sharedto;
+	protected $sharekey;
 
 	public function jsonSerialize() {
 		return [
