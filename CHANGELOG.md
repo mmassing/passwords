@@ -7,17 +7,22 @@
  * Sending emails is not available for use with the API; this is intended
  * The button for sharing is only available when at least one user is selected
  * When a users stops a share, a notification mail can be sent
+* Added full integration with **activity feed**
+ * Actions like creating a new passwords, sharing and deleting existing passwords will be sent to the Activity app
+ * On the Personal settings page, you can sign up for mail notifications about these events
 * Added version checker for administrators
  * Since I don't support the ownCloud App Store due to their rediculous release and upload flow (which interferes with GitHub AND my privacy AND is perfectly improvable/fixable by the ownCloud developers) a version checker was added to the admin page
  * The check verifies the installed version with the latest official release and the latest master version and adds buttons and instructions when an update is available
  * The check is disabled by default, as it sends the server IP address to github.com and administrators should decide themselves whether they permit this (in other words: if you do use the App Store, ownCloud GmbH has your server info and configuration but they have no privacy statement)
 * Added more picture sizes for website/company name
+* Added pictures to buttons on share dialog
 * Added check for overwriteprotocol in config.php (secure if it is 'https')
 * Temporary fix for use with the `user_saml` authentication: the extra ownCloud/NextCloud authentication doesn't work and will be blocked. A notice will be displayed on the admin page.
 * Fix for deleted flag in PostgreSQL combined with Firefox
 * Fix for sharing using LDAP
 * Fix for sharing using PostgreSQL
 * Fix for category filter
+* Fix for Undefined offset in passwordservice.php
 * Small design fix for double horizontal break lines on personal page when icons are disabled
 
 ####19 - Sept 15th, 2016
