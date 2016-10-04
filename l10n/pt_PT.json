@@ -25,6 +25,8 @@
     "Deletion of all trashed passwords done." : "Eliminadas todas as palavras-passe que estavam na reciclagem.",
     "Share" : "Partilhar",
     "Send email" : "Enviar email",
+    "The email has been sent to %s users." : "O email foi enviado para %s utilizadores.",
+    "Error: Could not send email." : "Erro: Não foi possivel enviar o email.",
     "Shared by %s" : "Partilhado por %s",
     "Notes" : "Notas",
     "The password was moved to the trash bin." : "A palavra-passe foi movida para a reciclagem.",
