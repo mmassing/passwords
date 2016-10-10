@@ -22,7 +22,7 @@
 * Fix for sharing using LDAP
 * Fix for sharing using PostgreSQL
 * Fix for category filter
-* Fix for Undefined offset in passwordservice.php
+* Fix for `Undefined offset` in passwordservice.php
 * Small design fix for double horizontal break lines on personal page when icons are disabled
 
 ####19 - Sept 15th, 2016
