@@ -114,13 +114,13 @@ class PasswordMapper extends Mapper {
 	}
 
 	public function sharedWithUsers($pwid) {
-		// returns array with users
+		// checks if password is already shared and returns array with users
 		$sql = "SELECT t1.pwid AS id, t1.sharedto AS website FROM *PREFIX*passwords_share AS t1 LEFT JOIN *PREFIX*passwords_share AS t2 ON t2.id = t1.pwid WHERE t1.pwid = ?";
 		return $this->findEntities($sql, [$pwid]);
 	}
 
 	public function isTrashed($pwid) {
-		// checks if passwords is already shared
+		// checks if password has been deleted
 		$sql = 'SELECT * FROM *PREFIX*passwords WHERE id = ?';
 		$sql = $this->db->prepare($sql);
 		$sql->bindParam(1, $pwid, \PDO::PARAM_INT);
@@ -131,7 +131,7 @@ class PasswordMapper extends Mapper {
 	}
 
 	public function isSharedWithUser($pwid, $shareduserid) {
-		// checks if passwords is already shared with a specific user
+		// checks if password is already shared with a specific user
 		$sql = 'SELECT SUM(CASE WHEN pwid = ? AND sharedto = ? THEN 1 ELSE 0 END) AS count FROM *PREFIX*passwords_share';
 		$sql = $this->db->prepare($sql);
 		$sql->bindParam(1, $pwid, \PDO::PARAM_INT);
