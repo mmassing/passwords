@@ -67,7 +67,8 @@ class PasswordService {
 				// check for valid GUID first: e.g. pattern A98C5A1E-A742-4808-96FA-6F409E799937
 				// checked using https://regex101.com
 				if (preg_match('/(^\{?[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}\}?)$/i', $uuid)) {
-					$arr[$row]['website'] = \OC::$server->getUserManager()->get($uuid)->getDisplayName();
+					// TO DO: fix looking for a valid way to get display names
+					// $arr[$row]['website'] = \OC::$server->getUserManager()->get($uuid)->getDisplayName();
 				}
 			}
 		}
@@ -174,12 +175,15 @@ class PasswordService {
 	}
 	
 	public function sendmail($kind, $website, $sharewith, $domain, $fullurl, $instancename, $userId) {
+		$has_ldap = (\OC::$server->getUserSession()->getUser()->getBackendClassName() == 'LDAP');
 		try {
 			if (count($sharewith) > 0 AND $sharewith != '') {
 				$mailer = \OC::$server->getMailer();
 				$senderaddress = \OC::$server->getConfig()->getSystemValue('mail_smtpname', 'noreply@' . $domain);
 				$me_username = $userId;
-				$me_displayname = \OC::$server->getUserManager()->get($me_username)->getDisplayName();
+				if (!$has_ldap) {
+					$me_displayname = \OC::$server->getUserManager()->get($me_username)->getDisplayName();
+				}
 				$me_email = \OC::$server->getUserManager()->get($me_username)->getEMailAddress();
 				if (!filter_var($me_email, FILTER_VALIDATE_EMAIL)) {
 					$me_email = '';
@@ -188,7 +192,9 @@ class PasswordService {
 				}
 				for ($x = 0; $x < count($sharewith); $x++) {
 					$username = $sharewith[$x];
-					$userdisplayname = \OC::$server->getUserManager()->get($username)->getDisplayName();
+					if (!$has_ldap) {
+						$userdisplayname = \OC::$server->getUserManager()->get($username)->getDisplayName();
+					}
 					$useremail = \OC::$server->getUserManager()->get($username)->getEMailAddress();
 					// You want to mail in the recipients language:
 					$userlanguage = \OC::$server->getConfig()->getUserValue($username, 'core', 'lang', 'en');
