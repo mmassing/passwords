@@ -20,7 +20,7 @@ class PasswordService {
 		$this->mapper = $mapper;
 	}
 
-	public function findAll($userId) {
+	public function findAll($userId, $api = false) {
 		
 		$result = $this->mapper->findAll($userId);
 		$arr_enc = json_encode($result);
@@ -70,6 +70,11 @@ class PasswordService {
 					// TO DO: fix looking for a valid way to get display names
 					// $arr[$row]['website'] = \OC::$server->getUserManager()->get($uuid)->getDisplayName();
 				}
+			}
+			
+			// remove eligable share users when using API
+			if ($arr[$row]['id'] == '0' && $api) {
+				array_splice($arr, $row, 1);
 			}
 		}
 

@@ -32,7 +32,7 @@ class PasswordApiController extends ApiController {
 	 * @NoAdminRequired
 	 */
 	public function index() {
-		return new DataResponse($this->service->findAll($this->userId));
+		return new DataResponse($this->service->findAll($this->userId, true));
 	}
 
 	/**
