@@ -18,6 +18,7 @@
 * Added pictures to buttons on share dialog
 * Added check for overwriteprotocol in config.php (secure if it is 'https')
 * Temporary fix for use with the `user_saml` authentication: the extra ownCloud/NextCloud authentication doesn't work and will be blocked. A notice will be displayed on the admin page.
+* Fix for records with user names in API, with ID = 0
 * Fix for deleted flag in PostgreSQL combined with Firefox
 * Fix for sharing using LDAP
 * Fix for sharing using PostgreSQL
