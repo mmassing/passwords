@@ -56,7 +56,7 @@ This is the safest Password Manager for generating, sharing, editing, and catego
 
 This app is primarily intended as a password MANAGER, e.g. for a local ownCloud/NextCloud instance on your own WPA2 protected LAN. If you trust yourself enough as security expert, you can use this app behind an SSL secured server for a neat cloud solution. The app will be blocked (with message) if not accessed thru https, which will result in your passwords not being loaded (decrypted) and shown. To prevent this, use ownCloud/NextClouds own 'Force SSL'-function on the admin page, or use HSTS (HTTP Strict Transport Security) on your server. Also, make sure your server hasn't any kind of vulnerabilities (POODLE, CSRF, XSS, SQL Injection, Privilege Escalation, Remote Code Execution, to name a few).
 
-The script for creating passwords can be found in [these lines of `/js/script.js`](/js/script.js#L1898-L1950).
+The script for creating passwords can be found in [these lines of `/js/passwords.js`](/js/passwords.js#L1898-L1950).
 
 ## Security
 ### + Password generation

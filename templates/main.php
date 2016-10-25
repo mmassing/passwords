@@ -55,7 +55,7 @@
 		<?php } else { 
 
 			script('passwords', 'handlebars');
-			script('passwords', 'script');
+			script('passwords', 'passwords');
 			script('passwords', 'sorttable');
 			script('passwords', 'spectrum'); // colour picker
 			script('passwords', 'clipboard.min'); // clipboard function
