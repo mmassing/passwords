@@ -635,7 +635,7 @@ hr {
 .icon-rename {
 	margin-top: -45px;
 }
-#popupContent img {
+#popupContent img:not(.share_avatar img) {
 	width: 4%;
 	opacity: 0.5;
 	background-size: 100%;
