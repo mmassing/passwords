@@ -127,6 +127,7 @@ OC.L10N.register(
     "to" : "para",
     "A password has been <strong>created</strong>" : "Uma palavra-passe foi <strong>criada</strong>",
     "A password has been <strong>edited</strong>" : "Uma palavra-passe foi <strong>editada</strong>",
+    "A password has been <strong>shared by me</strong>" : "A palavra-passe foi <strong>partilhada por mim</strong>",
     "Version" : "Versão",
     "Download %s" : "Transferir %s",
     "Extra authentication" : "Autenticação extra",
