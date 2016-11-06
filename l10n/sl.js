@@ -200,7 +200,7 @@ OC.L10N.register(
     "Click on a <b>user name</b> or a <b>password</b> to be able to copy it to the clipboard." : "Kliknite na <b>uporabniško ime</b> ali na <b>geslo</b> za kopiranje v odložišče.",
     "Click on a <b>website</b> to open it in a new tab." : "Kliknite na naslov <b>spletišča</b> za odpiranje v novem zavihku.",
     "The <b>password date</b> becomes <orange>orange after %s days</orange> and <red>red after %s days</red>." : "<b>Datum gesla</b> se spremeni v <orange>oraznžno po %s dneh</orange> in <red>rdečo po %s dneh</red>.",
-    "The <b>strength value</b> is interpreted as" : "<b>Vrednost jakosti</b> se interpretira kot",
+    "The <b>strength value</b> is interpreted as" : "<b>Vrednost moči gesla</b> je opredeljena kot",
     "or" : "ali",
     "No passwords yet" : "Ni še nobenega ustvarjenega gesla",
     "Create some new passwords!" : "Ustvarite nova gesla!",
