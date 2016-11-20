@@ -21,7 +21,7 @@
 * Renamed script.js to passwords.js to make debugging more transparant and to comply with ownCloud and NextCloud standards
 * Fix for records with user names in API, with ID = 0
 * Fix for user defined avatars not showing
-* Fix for deleted flag in PostgreSQL combined with Firefox
+* Fix for deleted flag in PostgreSQL combined with Firefox, but changing the database type to 'real' booleans (rather than integers - 0 and 1)
 * Fix for sharing using LDAP
 * Fix for sharing using PostgreSQL
 * Fix for category filter
@@ -43,7 +43,7 @@
  * Extra authentication using the ownCloud password is possible too 
 * Added user option to change icon sizes. Default is now larger: 32px instead of 16px, but users can change this themselves to 16px, 24px or 32px.
 * Added support for different app locations. If you use `/owncloud/apps2/passwords` for an instance, this will now be supported too. Admins can change this in the admin settings of ownCloud.
-* Readded support for PostgreSQL (changed database format for BLOB-types)
+* Readded support for PostgreSQL (changed database format for BLOB-types to string format)
 * Added version info on ownCloud/NextCloud admin page; it will check this GitHub project (/appinfo/info.xml) for a new version and will alert you with a message and buttons to visit this project, download the ZIP or TAR file, or view all releases
 * Added 'Share' button to cell menu
 * Added 'View' button to cell menu on shared passwords (removed 'Edit' and 'Share')
