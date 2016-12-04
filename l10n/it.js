@@ -240,7 +240,7 @@ OC.L10N.register(
     "site.com or Name Inc." : "sito.com or Nome spa",
     "Login name or e-mail" : "Nome utente o indirizzo email",
     "This will put a timer on the lower right of the screen, which resets on activity." : "Ciò inserirà un timer in basso a destra dello schermo, che si azzera in caso di attività.",
-    "or (if you've set an extra authentication password) the app will be locked down" : "o (se non ha impostato una pasword di autenticazione aggiuntiva) l'applicazione sarà bloccata.",
+    "or (if you've set an extra authentication password) the app will be locked down" : "o (se non ha impostato una password di autenticazione aggiuntiva) l'applicazione sarà bloccata",
     "Setting a countdown will log you off too when your session cookie ends (set to %s seconds by your administrator)" : "L'impostazione di un conto alla rovescia terminerà la sessione quando termina il cookie di sessione (impostato a %s secondi dall'amministratore)",
     "Show website icons" : "Mostra icone dei siti",
     "Icon size" : "Dimensione icone",
