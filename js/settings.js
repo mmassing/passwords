@@ -335,18 +335,15 @@ function generateUrl(extra_path) {
 }
 function updatePreview(size, service) {
 	if (service == 'ddg') {
-		var tablerow = '<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://icons.duckduckgo.com/ip2/duckduckgo.com.ico">duckduckgo.com</td>' +
-			'<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://icons.duckduckgo.com/ip2/facebook.com.ico">facebook.com</td>' +
-			'<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://icons.duckduckgo.com/ip2/wikipedia.org.ico">wikipedia.org</td>' +
-			'<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://icons.duckduckgo.com/ip2/owncloud.org.ico">owncloud.org</td>' +
-			'<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://icons.duckduckgo.com/ip2/nextcloud.com.ico">nextcloud.com</td>';
+		var tablerow = '<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://icons.duckduckgo.com/ip2/duckduckgo.com.ico">duckduckgo.com</td>';
 	}
 	if (service == 'ggl') {
-		var tablerow = '<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://www.google.com/s2/favicons?domain=google.com">google.com</td>' +
+		var tablerow = '<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://www.google.com/s2/favicons?domain=google.com">google.com</td>';
+	}
+	tablerow = tablerow + 
 			'<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://www.google.com/s2/favicons?domain=facebook.com">facebook.com</td>' +
 			'<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://www.google.com/s2/favicons?domain=wikipedia.org">wikipedia.org</td>' +
 			'<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://www.google.com/s2/favicons?domain=owncloud.org">owncloud.org</td>' +
 			'<td><img style="width:' + size + 'px;height:' + size + 'px;" src="https://www.google.com/s2/favicons?domain=nextcloud.com">nextcloud.com</td>';
-	}
 	return tablerow;
 }
