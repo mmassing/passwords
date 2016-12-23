@@ -20,6 +20,13 @@ class PasswordService {
 		$this->mapper = $mapper;
 	}
 
+	public static function getVendor() {
+		// this one is not set on ownCloud, but is on NextCloud
+		// so available values are atm: 'owncloud' (default) and 'nextcloud'
+		$vendor = \OC::$server->getConfig()->getAppValue('core', 'vendor', 'owncloud');
+		return $vendor;
+	}
+
 	public function findAll($userId, $api = false) {
 		
 		$result = $this->mapper->findAll($userId);
@@ -31,50 +38,69 @@ class PasswordService {
 		$has_ldap = (\OC::$server->getUserSession()->getUser()->getBackendClassName() == 'LDAP');
 		
 		foreach ($arr as $row => $value) {
-			
-			// DECRYPT PASSWORDS AND PROPERTIES
-			$userKey = $arr[$row]['user_id'];
-			$userSuppliedKey = $arr[$row]['website'];
-			$encryptedPass = $arr[$row]['pass'];
-			$encryptedProperties = $arr[$row]['properties'];
 
-			// notes for backwards compatibility with versions prior to v17
-			$encryptedPassNotes = $arr[$row]['notes'];
+			if ($arr[$row]['id'] != 0) {
+				
+				// DECRYPT PASSWORDS AND PROPERTIES
+				$userKey = $arr[$row]['user_id'];
+				$userSuppliedKey = $arr[$row]['website'];
+				$encryptedPass = $arr[$row]['pass'];
+				$encryptedProperties = $arr[$row]['properties'];
 
-			$e2 = new Encryption(MCRYPT_BLOWFISH, MCRYPT_MODE_CBC);
-			$key = Encryption::makeKey($userKey, $serverKey, $userSuppliedKey);
-			$arr[$row]['properties'] = $e2->decrypt($encryptedProperties, $key);
-			// notes for backwards compatibility with versions prior to v17
-			$arr[$row]['notes'] = $e2->decrypt($encryptedPassNotes, $key);
+				// notes for backwards compatibility with versions prior to v17
+				$encryptedNotes = $arr[$row]['notes'];
 
-			if ($userKey != $userId && $arr[$row]['id'] != 0) {
-				// check for sharekey
-				$sharekey_activeuser = $this->mapper->getShareKey($arr[$row]['id'], $userId);
-				$pos = strrpos($arr[$row]['properties'], $sharekey_activeuser);
-				if ($pos !== false) {
-					$arr[$row]['pass'] = $e2->decrypt($encryptedPass, $key);
+				$e2 = new Encryption(MCRYPT_BLOWFISH, MCRYPT_MODE_CBC);
+				$key = Encryption::makeKey($userKey, $serverKey, $userSuppliedKey);
+				$decryptedPass = $e2->decrypt($encryptedPass, $key, $arr[$row]['id'], $arr[$row]['user_id']);
+				$decryptedProperties = $e2->decrypt($encryptedProperties, $key, $arr[$row]['id'], $arr[$row]['user_id']);
+				$decryptedNotes = $e2->decrypt($encryptedNotes, $key, $arr[$row]['id'], $arr[$row]['user_id']);
+				// log has been made on failure, now allow sort of continuing
+				if (!$decryptedPass) {
+					$decryptedPass = '';
+				}
+				if (!$decryptedProperties) {
+					$decryptedProperties = '';
+				}
+				if (!$decryptedNotes) {
+					$decryptedNotes = '';
+				}
+
+				$arr[$row]['properties'] = $decryptedProperties;
+				// notes for backwards compatibility with versions prior to v17
+				$arr[$row]['notes'] = $decryptedNotes;
+
+				if ($userKey != $userId && $arr[$row]['id'] != 0) {
+					// check for sharekey
+					$sharekey_activeuser = $this->mapper->getShareKey($arr[$row]['id'], $userId);
+					$pos = strrpos($arr[$row]['properties'], $sharekey_activeuser);
+					if ($pos !== false) {
+						$arr[$row]['pass'] = $decryptedPass;
+					} else {
+						$arr[$row]['pass'] = 'oc_passwords_invalid_sharekey';
+						\OCP\Util::writeLog('passwords', "No valid sharekey found for user '" . $userId . "' before decrypting passwords.id " . $arr[$row]['id'] . " (" . $userSuppliedKey . "), possibly revoked by owner '" . $userKey . "'", \OCP\Util::WARN);
+					}
 				} else {
-					$arr[$row]['pass'] = 'oc_passwords_invalid_sharekey';
-					\OCP\Util::writeLog('passwords', "No valid sharekey found for user '" . $userId . "' before decrypting passwords.id " . $arr[$row]['id'] . " (" . $userSuppliedKey . "), possibly revoked by owner '" . $userKey . "'", \OCP\Util::WARN);
+					$arr[$row]['pass'] = $decryptedPass;
 				}
 			} else {
-				$arr[$row]['pass'] = $e2->decrypt($encryptedPass, $key);
-			}
-			
-			// GET DISPLAY NAMES ON LDAP BACKEND
-			if ($has_ldap && $arr[$row]['id'] == '0') {
-				$uuid = $arr[$row]['user_id'];
-				// check for valid GUID first: e.g. pattern A98C5A1E-A742-4808-96FA-6F409E799937
-				// checked using https://regex101.com
-				if (preg_match('/(^\{?[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}\}?)$/i', $uuid)) {
-					// TO DO: fix looking for a valid way to get display names
-					// $arr[$row]['website'] = \OC::$server->getUserManager()->get($uuid)->getDisplayName();
+				// now $arr[$row]['id'] == '0'
+
+				// GET DISPLAY NAMES ON LDAP BACKEND
+				if ($has_ldap) {
+					$uuid = $arr[$row]['user_id'];
+					// check for valid GUID first: e.g. pattern A98C5A1E-A742-4808-96FA-6F409E799937
+					// checked using https://regex101.com
+					if (preg_match('/(^\{?[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}\}?)$/i', $uuid)) {
+						// TO DO: fix looking for a valid way to get display names
+						// $arr[$row]['website'] = \OC::$server->getUserManager()->get($uuid)->getDisplayName();
+					}
 				}
-			}
-			
-			// remove eligable share users when using API
-			if ($arr[$row]['id'] == '0' && $api) {
-				array_splice($arr, $row, 1);
+				
+				// remove eligable share users when using API
+				if ($api) {
+					array_splice($arr, $row, 1);
+				}
 			}
 		}
 
@@ -104,26 +130,40 @@ class PasswordService {
 			$encryptedProperties = $arr['properties'];
 
 			// notes for backwards compatibility with versions prior to v17
-			$encryptedPassNotes = $arr['notes'];
+			$encryptedNotes = $arr['notes'];
 
 			$e2 = new Encryption(MCRYPT_BLOWFISH, MCRYPT_MODE_CBC);
 			$key = Encryption::makeKey($userKey, $serverKey, $userSuppliedKey);
-			$arr['properties'] = $e2->decrypt($encryptedProperties, $key);
+			$decryptedPass = $e2->decrypt($encryptedPass, $key, $id, $userId);
+			$decryptedProperties = $e2->decrypt($encryptedProperties, $key, $id, $userId);
+			$decryptedNotes = $e2->decrypt($encryptedNotes, $key, $id, $userId);
+			// log has been made on failure, now allow sort of continuing
+			if (!$decryptedPass) {
+				$decryptedPass = '';
+			}
+			if (!$decryptedProperties) {
+				$decryptedProperties = '';
+			}
+			if (!$decryptedNotes) {
+				$decryptedNotes = '';
+			}
+
+			$arr['properties'] = $decryptedProperties;
 			// notes for backwards compatibility with versions prior to v17
-			$arr['notes'] = $e2->decrypt($encryptedPassNotes, $key);
+			$arr['notes'] = $decryptedNotes;
 
 			if ($userKey != $userId && $arr['id'] != 0) {
 				// check for sharekey
 				$sharekey_activeuser = $this->mapper->getShareKey($arr['id'], $userId);
 				$pos = strrpos($arr['properties'], $sharekey_activeuser);
 				if ($pos !== false) {
-					$arr['pass'] = $e2->decrypt($encryptedPass, $key);
+					$arr['pass'] = $decryptedPass;
 				} else {
 					$arr['pass'] = 'oc_passwords_invalid_sharekey';
 					\OCP\Util::writeLog('passwords', "No valid sharekey found for user '" . $userId . "' while decrypting passwords.id: " . $arr['id'], \OCP\Util::WARN);
 				}
 			} else {
-				$arr['pass'] = $e2->decrypt($encryptedPass, $key);
+				$arr['pass'] = $decryptedPass;
 			}
 
 			return $arr;
@@ -157,8 +197,8 @@ class PasswordService {
 		$userSuppliedKey = $website;
 		$key = Encryption::makeKey($userKey, $serverKey, $userSuppliedKey);
 		$e = new Encryption(MCRYPT_BLOWFISH, MCRYPT_MODE_CBC);
-		$encryptedPass = $e->encrypt($pass, $key);
-		$encryptedProperties = $e->encrypt($properties, $key);
+		$encryptedPass = $e->encrypt($pass, $key, 0, $userId);
+		$encryptedProperties = $e->encrypt($properties, $key, 0, $userId);
 
 		$password = new Password();
 		// for backwards compatibility with versions prior to v17
@@ -355,8 +395,8 @@ class PasswordService {
 			$userSuppliedKey = $website;
 			$key = Encryption::makeKey($userKey, $serverKey, $userSuppliedKey);
 			$e = new Encryption(MCRYPT_BLOWFISH, MCRYPT_MODE_CBC);
-			$encryptedPass = $e->encrypt($pass, $key);
-			$encryptedProperties = $e->encrypt($properties, $key);
+			$encryptedPass = $e->encrypt($pass, $key, $id, $userId);
+			$encryptedProperties = $e->encrypt($properties, $key, $id, $userId);
 			
 			$password = $this->mapper->find($id, $userId);
 
@@ -691,15 +731,15 @@ class Encryption {
 	/**
 	 * Decrypt the data with the provided key
 	 *
-	 * @param string $data The encrypted datat to decrypt
+	 * @param string $data The encrypted data to decrypt
 	 * @param string $key  The key to use for decryption
 	 * 
 	 * @returns string|false The returned string if decryption is successful
 	 *                           false if it is not
 	 */
-	public function decrypt($data_hex, $key) {
+	public function decrypt($data_hex, $key, $passwordid, $userid) {
 
-		if ( !function_exists( 'hex2bin' ) ) {
+		if (!function_exists('hex2bin')) {
 			function hex2bin( $str ) {
 				$sbin = "";
 				$len = strlen( $str );
@@ -712,21 +752,24 @@ class Encryption {
 		}
 
 		$data = hex2bin($data_hex);
-
+	
 		$salt = substr($data, 0, 128);
 		$enc = substr($data, 128, -64);
 		$mac = substr($data, -64);
 
 		list ($cipherKey, $macKey, $iv) = $this->getKeys($salt, $key);
 
-		//if (!hash_equals(hash_hmac('sha512', $enc, $macKey, true), $mac)) {
 		if (!Encryption::hash_equals(hash_hmac('sha512', $enc, $macKey, true), $mac)) {
-			 return false;
+			\OCP\Util::writeLog('passwords', 'Decryption of id ' . $passwordid . ' of user \'' . $userid . '\' failed: the HMAC hashes of the MAC and the hash of MAC does not match with hash of HMAC', \OCP\Util::ERROR);
+			return false;
 		}
 
 		$dec = mcrypt_decrypt($this->cipher, $cipherKey, $enc, $this->mode, $iv);
 
 		$data = $this->unpad($dec);
+
+		// log success of decryption on debug level
+		\OCP\Util::writeLog('passwords', 'Decryption of id ' . $passwordid . ' of user ' . $userid . ' successful', \OCP\Util::DEBUG);
 
 		return $data;
 	}
@@ -739,7 +782,7 @@ class Encryption {
 	 *
 	 * @returns string The encrypted data
 	 */
-	public function encrypt($data, $key) {
+	public function encrypt($data, $key, $passwordid, $userid) {
 		$salt = mcrypt_create_iv(128, MCRYPT_DEV_URANDOM);
 		//list ($cipherKey, $macKey, $iv) = $this->getKeys($salt, $key);
 		list ($cipherKey, $macKey, $iv) = Encryption::getKeys($salt, $key);
@@ -749,14 +792,14 @@ class Encryption {
 
 		$mac = hash_hmac('sha512', $enc, $macKey, true);
 
-		$data = $salt . $enc . $mac;
-
 		$data = bin2hex($salt . $enc . $mac);
-		//$data = pack("H*" , $data);
-		return $data;
-		
-		return $salt . $enc . $mac;
 
+		// log success of encryption on debug level
+		if ($passwordid == 0) {
+			$passwordid = '(not yet set)';
+		}
+		\OCP\Util::writeLog('passwords', 'Encryption of id ' . $passwordid . ' of user ' . $userid . ' successful', \OCP\Util::DEBUG);
+		return $data;
 	}
 
 	/**
