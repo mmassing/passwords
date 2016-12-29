@@ -27,5 +27,5 @@
 	</form>
 </div>
 <div id="auth_footer">
-	<p id="githubref"><a href="https://github.com/fcturner/passwords/" target="_blank"><?php p($instancename . ' ' . $passwordsname) ?></a> <small>v<?php p($passwordsversion) ?></small</p>
+	<p id="githubref"><a href="https://github.com/fcturner/passwords/" target="_blank"><?php p($instancename . ' ' . $passwordsname) ?></a> <small>v<?php p($passwordsversion) ?></small></p>
 </div>
