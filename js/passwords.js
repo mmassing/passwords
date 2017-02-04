@@ -2367,19 +2367,18 @@ function webimg2new() {
 	}
 }
 
-// adapted from mustache.js
-var entityMap = {
-	'&': '&amp;',
-	'<': '&lt;',
-	'>': '&gt;',
-	'"': '&quot;',
-	"'": '&#39;',
-	'/': '&#x2F;',
-	'`': '&#x60;',
-	'=': '&#x3D;'
-};
-
 function escapeHTML(text, only_brackets) {
+	// adapted from mustache.js
+	var entityMap = {
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		"'": '&#39;',
+		'/': '&#x2F;',
+		'`': '&#x60;',
+		'=': '&#x3D;'
+	};
 	if (typeof text !== 'undefined') {
 		if (only_brackets) {
 			return text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
